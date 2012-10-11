@@ -8,13 +8,18 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URLDecoder;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static java.nio.file.StandardOpenOption.*;
+import net.natsurou.criptosort.lib.Decoder;
 import net.natsurou.criptosort.lib.Encoder;
 import net.natsurou.criptosort.lib.errors.SemanticError;
 import net.natsurou.criptosort.lib.structures.EncodedFile;
@@ -41,8 +46,18 @@ public class CriptoSort {
         switch (args[0]) {
             case "d":
                 i = 1;
+                outputFileName = noExt(args[args.length-1])+".crs";
                 while(i<args.length) {
                     if(args[i].startsWith("-")) {
+                        if (args[i].equals("-o")) {
+                            i++;
+                            if(i<args.length&&isSane(args[i])) {
+                                outputFileName = args[i];
+                            } else {
+                                System.out.println(messages.getString("bad_syntax"));
+                                System.out.format(messages.getString("usage"), getAppName());
+                            }
+                        }
                     } else {
                         parse(args[i]);
                     }
@@ -51,8 +66,18 @@ public class CriptoSort {
                 break;
             case "e":
                 i = 1;
+                outputFileName = noExt(args[args.length-1])+".out";
                 while(i<args.length) {
                     if(args[i].startsWith("-")) {
+                        if (args[i].equals("-o")) {
+                            i++;
+                            if(i<args.length&&isSane(args[i])) {
+                                outputFileName = args[i];
+                            } else {
+                                System.out.println(messages.getString("bad_syntax"));
+                                System.out.format(messages.getString("usage"), getAppName());
+                            }
+                        }
                     } else {
                         encode(args[i]);
                     }
@@ -122,6 +147,7 @@ public class CriptoSort {
         saveProperties("---No Comment---");
     }
     
+    private static String outputFileName;
     private static String appPropsPath = System.getProperty("user.dir")
             +System.getProperty("file.separator") +"CriptoSort.properties";
     private static ResourceBundle messages;
@@ -132,16 +158,48 @@ public class CriptoSort {
         Scanner scanner = new Scanner(sourceFile);
         Parser parser = new Parser(scanner);
         EncodedFile efile = parser.parseCode();
+        Decoder decoder = new Decoder(efile);
+        decoder.decode();
+        String buffer = "";
+        for (int i = 0; i < decoder.getNumberOfLines(); i++) {
+            buffer+=decoder.getLine(i)+System.lineSeparator();
+        }
+        try {
+            Files.write(Paths.get(outputFileName),
+                    buffer.getBytes(),
+                    java.nio.file.StandardOpenOption.CREATE,
+                    java.nio.file.StandardOpenOption.WRITE);
+        } catch (IOException ex) {
+            Logger.getLogger(CriptoSort.class.getName()).log(Level.SEVERE, null, ex);
+            System.exit(1);
+        }
     }
 
     private static void encode(String filename) {
         SourceFile sourceFile = new SourceFile(filename);
         Encoder encoder = new Encoder(sourceFile);
         try {
-            encoder.encode();
-        } catch (SemanticError ex) {
+            Files.write(Paths.get(outputFileName),
+                    encoder.encode().dump().toString().getBytes(),
+                    java.nio.file.StandardOpenOption.CREATE,
+                    java.nio.file.StandardOpenOption.WRITE);
+        } catch (SemanticError | IOException ex) {
             Logger.getLogger(CriptoSort.class.getName()).log(Level.SEVERE, null, ex);
             System.exit(1);
         }
+    }
+
+    private static boolean isSane(String string) {
+        return true; //not yet implemented
+    }
+
+    private static String noExt(String string) {
+        int i;
+        for (i = string.length()-1; i> 0; i--) {
+            if(string.charAt(i) == '.') {
+                break;
+            }
+        }
+        return string.substring(0, i);
     }
 }

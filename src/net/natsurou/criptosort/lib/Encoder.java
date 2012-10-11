@@ -71,6 +71,6 @@ public class Encoder {
                     wordPos++;
             }
         }
-        return null;
+        return efile;
     }
 }

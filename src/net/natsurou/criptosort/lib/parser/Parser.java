@@ -49,6 +49,8 @@ public class Parser {
                 Singlet s = parseSinglet();
                 if (s!=null) {
                     efile.addSinglet(s);
+                } else {
+                    efile.addEOF();
                 }
                 if (newLine) {
                     efile.addNewLine();
@@ -108,7 +110,9 @@ public class Parser {
         } else if (currentToken.kind == Token.EOT){
             moreToParse = false;
             return null;
-        } else { throw (new SyntaxError());}
+        } else {
+            System.err.println("Found proble while parsing"+currentToken);
+            throw (new SyntaxError());}
         
         s = new Singlet(code, wordPos, linePos);
         

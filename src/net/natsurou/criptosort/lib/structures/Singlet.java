@@ -22,7 +22,7 @@ public class Singlet implements Serializable {
     
     @Override
     public String toString() {
-        return "("+ charCode + ", " + positionInWord + ". " + positionInLine + ")"; 
+        return "("+ charCode + ", " + positionInWord + ", " + positionInLine + ")"; 
     }
     
     public int getCharCode() {
